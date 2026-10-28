@@ -1,0 +1,11 @@
+/* FlyLog V8.0 主题切换器 UI（与 assets/app.css 解耦，独立加载，不进压缩链路） */
+.fly-theme-sw-wrap{margin-left:8px;display:inline-flex;align-items:center}
+.fly-theme-sw{
+  font-size:12px;color:var(--text-2);background:var(--surface);
+  border:1px solid var(--border);border-radius:20px;padding:2px 8px;cursor:pointer;
+  max-width:120px;vertical-align:middle;font-family:inherit;
+}
+.fly-theme-sw:focus{outline:2px solid var(--brand);outline-offset:1px}
+@media (max-width:600px){
+  .fly-theme-sw-wrap{margin-left:0;display:block;margin-top:6px}
+}

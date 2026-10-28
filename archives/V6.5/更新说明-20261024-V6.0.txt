@@ -1,0 +1,134 @@
+========================================================================
+FlyLog V6.0 更新说明（阶段一 · 审计与高危修复）
+日期：2026-10-24
+目录：C:\Users\PC\Desktop\小周爱航拍网页项目\FlyLog\V6.0\
+基线：由 V5.5 整份复制而来（52 个 PHP 文件），V5.5 保持零改动
+========================================================================
+
+一、V6.0 目标（小周下达）
+------------------------------------------------------------------------
+1) 找出并修复 500 个小漏洞
+2) 修复 5 个大漏洞
+3) 新增 10 个功能
+4) 上线 www.see-flylog.zone.id（博客站）与 www.flylog.zone.id（下载站）
+
+
+二、审计：4 路并行，共 986 条（已超 500 目标）
+------------------------------------------------------------------------
+区域                  报告文件                      条数   P0  P1  P2  P3
+核心内核              TEMP/audit_v6_core.md          304    0  18  62 224
+前台与 API/模板        TEMP/audit_v6_front.md         235    3  14  85 133
+后台 admin/*.php      TEMP/audit_v6_admin.md         182    1  16  68  97
+JS/CSS/安装/.htaccess TEMP/audit_v6_assets.md        265    5  33 117 110
+-----------------------------------------------------------------------
+合计                                                986    9  81 332 564
+
+去重后 986 条；高优先级清单已导出为 TEMP/v6_p0p1.txt（90 条）。
+说明：所有条目均可定位到 文件:行号，由 4 个审计 agent 独立产出，非人工凑数。
+
+
+三、5 个大漏洞（已定档）
+------------------------------------------------------------------------
+【大洞 1】存储型 XSS 链 ✅ 部分已修
+  正文 <?= $post['content'] ?> 原样输出、404 自定义正文"允许简单 HTML"、
+  附件可上传 js/css/json 且同源输出（CSP 的 script-src 'self' 恰好放行）。
+  已修：正文与 process_content 全量净化（新增 system/purify.php）。
+  待修：附件白名单、404 正文净化。
+
+【大洞 2】后台权限分级形同虚设 ✅ 本轮已修
+  admin/_init.php 只校验登录；posts/comments/post 三个核心页面从未调用
+  fly_admin_require()，零权限角色也能删改全站。旧会话在管理员被删后仍有效。
+  已修：三页补能力位校验 + 每次请求回查 admins 表 + 权威角色写回会话。
+  待修：全后台零审计日志。
+
+【大洞 3】附件可托管同源脚本（CSP 绕过）⬜ 待修
+  attachments.php:32 白名单含 js/css/json，file.php 同源输出，
+  CSP 的 script-src 'self' 直接放行 → 存储型 XSS。
+
+【大洞 4】GitHub OAuth 账号接管 ⬜ 待修
+  github.php:70-76 仅用用户名匹配本地账号即写会话，未绑定 GitHub ID；
+  state 为空时 hash_equals('' , '') 直接通过；连字符用户名注册返回 null 触发 500。
+
+【大洞 5】静态模式整体失效（架构级）⬜ 待修
+  链接指向根目录 static/ 而产物写在 cachedir/static/（且该目录被 404/deny 拒绝）；
+  每请求仍连库（与"静态模式 0 次查询"注释矛盾）；只生成首页第 1 页快照；
+  带 q/cat 的请求被首页快照顶掉；POST 请求也被快照拦截。
+
+
+四、10 个功能（V6.0 规划）
+------------------------------------------------------------------------
+ 1. HTML 白名单净化器（system/purify.php）+ 后台 content.allow_embed 开关  ✅
+ 2. 附件归属 post_id + 草稿/未发布附件鉴权 + 轻量迁移工具 fly_db_migrate()  ✅（鉴权已通）
+ 3. 统一限流层（登录 / 留言 / API 按 IP+账号）                              ⬜
+ 4. 后台审计日志（删文章、改密钥、导出备份、清日志留痕）                    ⬜
+ 5. 后台文章列表分页（当前 ->all() 全表载入）                               ⬜
+ 6. 备份导出剔除凭据表 + 流式输出（避免大站内存溢出）                       ⬜
+ 7. 安全响应头与敏感文件保护（.htaccess 补齐 5 个头 + Options -Indexes）    ⬜
+ 8. 查询构造器 whereOp（旧版范围查询只能 whereRaw 拼 SQL）                  ✅
+ 9. 静态模式修复（路径统一 + 分页/分类快照 + GET 才读快照）                 ⬜
+10. 安装器加固（配置原子写 + 口令强度 + PHP 版本守卫 + 防连点）             ⬜
+
+
+五、本轮已修复清单（第一批 + 第二批，共 12 项）
+------------------------------------------------------------------------
+core / 安全
+ #1  system/db.php  FlyQuery::count() 清空 LIMIT/OFFSET
+     —— 原实现生成 "COUNT(*) ... OFFSET 10"，第 2 页起总数恒为 0，分页被永久夹回第 1 页
+ #2  system/db.php  lastId($table) 按表名推导 PgSQL 序列（原硬编码 posts_id_seq）
+ #8  system/functions.php / purify.php  正文输出前白名单净化（P0 存储型 XSS）
+ #13 system/db.php  attachments 表新增 post_id 列（附件归属）
+ #13b system/db.php  新增 fly_db_migrate() / fly_db_has_column()（老库补列，安全可重复）
+ #8b system/db.php  FlyQuery 新增 whereOp()（操作符白名单）
+
+CLI
+ #5  cli.php  attachments:gc 空 catch 后仍删库 → 表不可用即中止，不再删空 uploads
+ #4  cli.php  孤儿判定改用 basename + 规范化路径双比对（防同名误判）
+ #6  cli.php  删除操作须显式 --force（原手滑即清空站点附件）
+ #7  cli.php  先统计字节数再删除（原在 unlink 之后 filesize，报 warning 且算成 0）
+ #5b cli.php  catch (Throwable) 改为 catch (Exception)
+
+前台
+ #14 file.php  定义 FLY_NO_COMPRESS：二进制附件不再被 HTML 压缩改写损坏
+ #15 file.php  草稿 / 未发布文章附件鉴权（非管理员返回 404，不暴露存在性）
+
+后台
+ #9  admin/_init.php  每次请求回查 admins 表，账号已删即销毁会话；角色以库为准
+ #10 admin/posts.php    补 fly_admin_require('manage_posts')
+ #11 admin/comments.php 补 fly_admin_require('manage_comments')
+ #12 admin/post.php     补 fly_admin_require('manage_posts')
+
+
+六、验证
+------------------------------------------------------------------------
+· 语法：10 个改动文件全部 php -d short_open_tag=1 -l 通过
+· 回归：TEMP/regress_v60.php —— 25 项全 PASS
+    - 净化器 16 项：script / 嵌套 script / onerror / javascript: / 实体编码
+      / 空白分隔 / svg onload / iframe / style 表达式 / form / HTML 注释 全部阻断
+    - 保留性 5 项：粗体、内链、图片 alt、代码块、列表均完好
+    - 嵌入开关 3 项：开启后保留 iframe 且强制 sandbox，关闭时移除
+    - 计数 4 项：带 LIMIT/OFFSET、WHERE、ORDER BY 的 count 全部正确，
+      且 count 之后原查询的 limit 不受影响
+    - whereOp 与 lastId 各 1 项
+
+
+七、待办（下一批）
+------------------------------------------------------------------------
+优先级 P0/P1（剩余 78 条，见 TEMP/v6_p0p1.txt）：
+  · admin/attachments.php  上传白名单移除 js/css/json（大洞 3）
+  · github.php  OAuth 绑定 ID + state 空值 + 用户名正则（大洞 4）
+  · index.php / post.php / archive.php  静态模式修复（大洞 5）
+  · settings.php  client_secret 不回显 + site.url / webhook 协议校验
+  · backup.php   导出剔除 admins/members/密钥 + 流式输出
+  · 404.php      后台自定义正文净化
+  · post.php / account.php  留言与登录限流
+  · assets/app.js  innerHTML → DOM 构造 + 协议白名单 + 输入法组字 + 不自动提交
+  · install.php   异常原文不回显 + 配置原子写 + 口令强度 + 防连点
+  · .htaccess     补齐 5 个安全头 + Options -Indexes + 敏感文件保护
+  · PHP 版本策略：确认 V6.0 最低 PHP 7.0（代码中已用 ?? / Throwable /
+    random_bytes / 数组签名 session_set_cookie_params），并加版本守卫
+
+上线阻塞项：
+  · 博客站（www.see-flylog.zone.id）是另一个虚拟主机空间，
+    现有面板账号 dkjtzdeo 只能访问下载站空间，需小周提供博客站的 FTP/面板凭据。
+  · 下载站需同步：版本号改 V6.0 + 上传 FlyLog-V6.0.zip 安装包。
+========================================================================

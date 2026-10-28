@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlyLog - 下载 | 把修改权与自定义权交还给用户的现代博客引擎</title>
+<meta name="description" content="FlyLog 是一个完全开源、免费、无广告的轻量现代博客引擎。支持 MySQL/MariaDB/PgSQL/SQLite 四数据库，零配置部署，全站命名自定义。">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚁</text></svg>
+<style>
+/* ============ FlyLog 官方下载页 · 暗色极简科技风（纯 CSS，无 JS） ============ */
+:root{
+  --bg:#0f172a;
+  --bg-2:#0b1220;
+  --primary:#38bdf8;
+  --primary-dim:rgba(56,189,248,.14);
+  --text:#e2e8f0;
+  --text-2:#94a3b8;
+  --text-3:#64748b;
+  --card:rgba(30,41,59,.55);
+  --border:rgba(56,189,248,.16);
+  --radius:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  line-height:1.7;
+  font-size:15px;
+  min-height:100vh;
+  /* 暗色科技氛围：顶部微光 + 细网格 */
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(56,189,248,.10), transparent 60%),
+    linear-gradient(rgba(56,189,248,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56,189,248,.025) 1px, transparent 1px);
+  background-size:100% 100%, 44px 44px, 44px 44px;
+}
+.wrap{max-width:960px;margin:0 auto;padding:0 22px}
+
+/* ---------- 顶部 Logo 区 ---------- */
+.hero{text-align:center;padding:72px 0 46px}
+.logo{
+  display:inline-flex;align-items:baseline;gap:10px;
+  font-size:52px;font-weight:800;letter-spacing:1px;color:#fff;
+  text-shadow:0 0 18px rgba(56,189,248,.75), 0 0 46px rgba(56,189,248,.38);
+}
+.logo .php{
+  font-size:26px;font-weight:700;color:var(--primary);
+  text-shadow:0 0 14px rgba(56,189,248,.65);
+}
+.tagline{
+  margin-top:16px;font-size:17px;color:var(--text-2);letter-spacing:.5px;
+}
+.tagline b{color:var(--primary);font-weight:600}
+.hero-badges{margin-top:22px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+.hero-badges span{
+  font-size:12.5px;color:var(--text-2);border:1px solid var(--border);
+  border-radius:99px;padding:4px 14px;background:var(--primary-dim);
+}
+
+/* ---------- 通用卡片（毛玻璃 + 发光阴影） ---------- */
+.glass{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  box-shadow:0 8px 32px rgba(2,6,23,.5), 0 0 0 1px rgba(56,189,248,.04), inset 0 1px 0 rgba(255,255,255,.04);
+}
+
+/* ---------- 特性网格 ---------- */
+.section-title{
+  text-align:center;font-size:21px;font-weight:700;color:#fff;margin:38px 0 22px;
+  letter-spacing:.5px;
+}
+.section-title::after{
+  content:"";display:block;width:44px;height:3px;border-radius:2px;
+  background:var(--primary);box-shadow:0 0 12px rgba(56,189,248,.8);
+  margin:10px auto 0;
+}
+.features{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.feature{padding:24px 20px;transition:transform .25s, border-color .25s}
+.feature:hover{transform:translateY(-4px);border-color:rgba(56,189,248,.4)}
+.feature .icon{font-size:30px;margin-bottom:12px}
+.feature h3{font-size:15.5px;color:#fff;margin-bottom:8px;font-weight:700}
+.feature p{font-size:13px;color:var(--text-2);line-height:1.75}
+
+/* ---------- 下载区 ---------- */
+.download{padding:38px 32px;text-align:center;margin-top:38px}
+.dl-version{font-size:13px;color:var(--text-3);letter-spacing:1px;text-transform:uppercase}
+.dl-title{font-size:30px;font-weight:800;color:#fff;margin:8px 0 4px;
+  text-shadow:0 0 16px rgba(56,189,248,.4)}
+.dl-date{font-size:13px;color:var(--text-2);margin-bottom:26px}
+.dl-btn{
+  display:inline-flex;align-items:center;gap:10px;
+  background:linear-gradient(135deg,#38bdf8,#0ea5e9);
+  color:#04222e;font-size:17px;font-weight:800;letter-spacing:.5px;
+  text-decoration:none;padding:16px 46px;border-radius:99px;
+  box-shadow:0 0 24px rgba(56,189,248,.45), 0 8px 24px rgba(2,6,23,.5);
+  transition:transform .2s, box-shadow .2s;
+}
+.dl-btn:hover{transform:translateY(-2px);box-shadow:0 0 36px rgba(56,189,248,.65), 0 12px 28px rgba(2,6,23,.55)}
+.dl-btn .arrow{font-size:20px}
+.dl-meta{
+  margin-top:24px;display:flex;justify-content:center;gap:12px;flex-wrap:wrap;
+  font-size:12.5px;color:var(--text-2);
+}
+.dl-meta code{
+  font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+  background:rgba(15,23,42,.8);border:1px solid var(--border);border-radius:6px;
+  padding:3px 10px;color:var(--primary);user-select:all;
+}
+
+/* ---------- 三步安装指南 ---------- */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:20px;text-align:left}
+.step{padding:20px}
+.step .n{
+  width:30px;height:30px;border-radius:50%;background:var(--primary-dim);
+  border:1px solid var(--border);color:var(--primary);font-weight:800;
+  display:flex;align-items:center;justify-content:center;font-size:14px;margin-bottom:12px;
+}
+.step h4{font-size:14.5px;color:#fff;margin-bottom:6px}
+.step p{font-size:13px;color:var(--text-2)}
+.step code{font-family:ui-monospace,Consolas,monospace;color:var(--primary);font-size:12.5px}
+
+/* ---------- 底部 ---------- */
+.footer{margin-top:56px;padding:30px 0 40px;text-align:center;border-top:1px solid rgba(56,189,248,.1)}
+.footer p{font-size:13px;color:var(--text-3);line-height:1.9}
+.footer .oss{color:var(--text-2)}
+.footer b{color:var(--primary)}
+
+/* ---------- 移动端自适应 ---------- */
+@media (max-width:760px){
+  .hero{padding:52px 0 34px}
+  .logo{font-size:38px}
+  .logo .php{font-size:19px}
+  .tagline{font-size:14.5px}
+  .features{grid-template-columns:1fr 1fr}
+  .steps{grid-template-columns:1fr}
+  .download{padding:30px 18px}
+  .dl-title{font-size:24px}
+  .dl-btn{padding:14px 34px;font-size:15.5px}
+}
+@media (max-width:420px){
+  .features{grid-template-columns:1fr}
+  .dl-meta{flex-direction:column;align-items:center}
+}
+/* 尊重减少动效偏好 */
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  .feature,.dl-btn{transition:none}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- ===== 顶部：Logo + 标语 ===== -->
+  <header class="hero">
+    <div class="logo">🚁 FlyLog <span class="php">PHP</span></div>
+    <p class="tagline">把<b>修改权</b>与<b>自定义权</b>交还给用户的现代博客引擎</p>
+    <div class="hero-badges">
+      <span>完全开源</span><span>永久免费</span><span>无广告</span><span>无追踪</span><span>数据 100% 归你</span>
+    </div>
+  </header>
+
+  <!-- ===== 核心特性 ===== -->
+  <h2 class="section-title">为什么选择 FlyLog</h2>
+  <section class="features">
+    <div class="feature glass">
+      <div class="icon">🗄️</div>
+      <h3>多数据库支持</h3>
+      <p>纯原生 PHP + PDO 抽象层，MySQL / MariaDB / PgSQL / SQLite 四库自由切换，上传即用。</p>
+    </div>
+    <div class="feature glass">
+      <div class="icon">✏️</div>
+      <h3>全站命名自定义</h3>
+      <p>「文章」「留言」「分类」所有前台名词后台可改，把博客变成你的飞行日志、学习手记。</p>
+    </div>
+    <div class="feature glass">
+      <div class="icon">🛡️</div>
+      <h3>无广告无追踪</h3>
+      <p>不内置任何第三方统计与广告代码，不采集访客数据，日志只存在你自己的服务器上。</p>
+    </div>
+    <div class="feature glass">
+      <div class="icon">⚡</div>
+      <h3>零配置部署</h3>
+      <p>解压上传到主机根目录，访问 install.php 三步完成安装，无需 Composer、无外部依赖。</p>
+    </div>
+  </section>
+
+  <!-- ===== 下载区 ===== -->
+  <section class="download glass">
+    <div class="dl-version">当前最新版本</div>
+    <h2 class="dl-title">V2.0 正式版</h2>
+    <p class="dl-date">发布于 2026-10-22 · 全部代码仅 74.9 KB，秒下秒装</p>
+    <a class="dl-btn" href="downloads/FlyLog-V2.0.zip" download>⬇ 下载安装包 <span class="arrow">→</span></a>
+    <div class="dl-meta">
+      <span>文件：FlyLog-V2.0.zip（74.9 KB）</span>
+      <span>MD5：<code>dc2d569efd4fb7e888dfd8e8e4c214c5</code></span>
+    </div>
+
+    <h3 class="section-title" style="margin-top:36px">三步极简安装</h3>
+    <div class="steps">
+      <div class="step glass">
+        <div class="n">1</div>
+        <h4>下载解压至主机</h4>
+        <p>下载 zip 并解压，将全部文件上传到主机网站根目录（如 <code>/wwwroot</code>）。</p>
+      </div>
+      <div class="step glass">
+        <div class="n">2</div>
+        <h4>访问 install.php</h4>
+        <p>浏览器打开 <code>https://你的域名/install.php</code>，按提示选择数据库。</p>
+      </div>
+      <div class="step glass">
+        <div class="n">3</div>
+        <h4>选库并注册管理员</h4>
+        <p>四选一数据库（SQLite 上传即用），注册管理员账号，开写第一篇文章。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 底部声明 ===== -->
+  <footer class="footer">
+    <p class="oss">FlyLog 是一个<b>完全开源、免费、无广告</b>的博客项目。</p>
+    <p>你的数据 100% 保存在你自己的服务器上 · 我们不收集任何信息 · 修改权与自定义权永久归你所有</p>
+    <p style="margin-top:10px">Powered by <b>FlyLog PHP</b></p>
+  </footer>
+
+</div>
+
+</body>
+</html>

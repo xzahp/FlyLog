@@ -1,0 +1,91 @@
+FlyLog V7.0 第二批更新说明
+================================================================
+日期：2026-10-26
+范围：前台点赞 / 收藏 / 浏览统计 + 审计日志 + 系统健康页 + 回收站（软删除）
+版本号：FLY_VERSION = 7.0
+
+----------------------------------------------------------------
+一、前台互动：点赞 / 收藏 / 浏览统计
+----------------------------------------------------------------
+1. 文章点赞（api/like.php）
+   - 同一 IP 对同一篇文章只计一次赞（post_likes 表 post_id+ip 唯一约束去重），再次点击 = 取消赞。
+   - 前端 post.php 正文下方新增点赞按钮（带 data-id / data-csrf / aria-pressed），AJAX 实时切换，
+     显示数随点赞状态更新；防刷：CSRF 校验 + 同一 IP 同一文章 1 秒缓存节流。
+   - 点赞数写回 posts.likes（防负数写法，四库通用，不依赖 GREATEST）。
+   - 状态查询 fly_post_like_state() 供渲染初始「已赞」态。
+
+2. 我的收藏（favorites.php）
+   - 纯前端实现：localStorage 存收藏的文章 id 列表（键 fly_favs）。
+   - 页面加载后逐条向 /api/index.php?route=post 拉取标题渲染；失效项（已被删/进回收站）标「链接已失效」。
+   - 可一键「取消收藏」移除（含 escapeHtml 防 XSS）。头部导航新增「收藏」入口。
+
+3. 热门文章
+   - fly_post_popular($limit) 按（阅读 + 点赞×5）综合排序，排除回收站 / 草稿 / 未到定时。
+   - 侧边栏新增「🔥 热门文章」widget，展示标题 + 👁 阅读 + 👍 点赞。
+
+4. 浏览统计
+   - 沿用 BasePost::incrementViews（仅已发布文章计数，不虚增草稿/定时）。
+
+----------------------------------------------------------------
+二、回收站（软删除）
+----------------------------------------------------------------
+- posts 表新增 deleted_at 时间戳（0 = 未删，>0 = 已软删）。
+- BasePost::delete() 改为软删除（仅置 deleted_at）；新增 restore()（还原）与 purge()（真删，
+  连带清 comments / post_tags / post_likes 孤儿行）。
+- 前台全链路过滤 deleted_at = 0：find / query / 搜索联想 / 侧边栏分类计数 / api / sitemap / archive /
+  附件鉴权 / 分类计数，回收站文章不会泄漏到前台。
+- 后台文章列表只显示未删文章，并提示回收站数量；删除成功后提示「已移入回收站」。
+- 新增 admin/trash.php：回收站列表 + 还原 / 彻底删除 / 清空，全部 CSRF 校验，并记录审计。
+
+----------------------------------------------------------------
+三、审计日志（admin/audit.php + system/audit.php）
+----------------------------------------------------------------
+- 新增 audit_logs 表，记录「谁（actor）/ 时间 / 动作 / 目标类型 / 目标 id / 详情 / IP（脱敏）」。
+- fly_audit($action,$targetType,$targetId,$detail) 全部 try/Throwable 包住，审计失败绝不致命。
+- 已接入全部关键操作：
+   文章：post.create / post.update / post.delete（进回收站）/ post.restore / post.purge
+   留言：comment.approve / unapprove / delete / approve_all
+   分类：category.create / update / delete / import
+   标签：tag.create / update / delete / gc（清理空标签）
+   单页：page.create / update / delete
+   设置：setting.update
+   登录：admin.login
+- 审计页支持按 action 筛选 + 分页，动作名经 fly_audit_action_label() 中文化，IP 经 fly_mask_ip 脱敏。
+- 与登录日志 admin_logs 分工：admin_logs 只记登录成败，audit_logs 记业务操作。
+
+----------------------------------------------------------------
+四、系统健康页（admin/health.php）
+----------------------------------------------------------------
+- 汇总展示：数据库驱动与版本、各表行数、关键目录可写性（cache/logs/data）、
+   PHP 版本 / 上传上限 / 执行时限 / 磁盘空间、近 24 小时 php-error / slow 日志行数、
+   扩展依赖（gd/curl/mbstring/json/openssl/zip）、HTTPS 配置。
+- 状态分三色：正常（health-ok）/ 警告（health-warn）/ 异常（health-bad）。
+
+----------------------------------------------------------------
+五、后台导航
+----------------------------------------------------------------
+- admin/_init.php 导航数组新增三项（均需 view_logs 或 manage_posts 权限，越权自动隐藏）：
+   回收站（trash.php, manage_posts）/ 审计日志（audit.php, view_logs）/ 系统健康（health.php, view_logs）。
+
+----------------------------------------------------------------
+六、数据库迁移（四库兼容，幂等）
+----------------------------------------------------------------
+- fly_schema() 新增 post_likes、audit_logs 两张表（含 UNIQUE 约束，SQLite/PgSQL 已正确处理内联 PK，
+  修复「more than one primary key」问题：表级 PRIMARY KEY (id) 后若跟 UNIQUE 等约束也能正确剥离）。
+- fly_db_migrate() 对老库补 posts.likes、posts.deleted_at 两列（缺列则加，可重复执行）。
+
+----------------------------------------------------------------
+七、回归测试（TEMP/test_v7b2.php，本地 SQLite）
+----------------------------------------------------------------
+- 覆盖：点赞去重（同 IP / 跨 IP）/ 软删→回收站可见→前台不可见 / 还原 / 硬删连带清点赞 /
+  审计写入与中文标签 / 热门文章排序与回收站排除。
+- 结果：26 项断言全部 PASS。
+
+----------------------------------------------------------------
+八、部署提醒（上线博客站前核对）
+----------------------------------------------------------------
+- 升级 = 整份 cp -r V6.5 → V7.0 再改；旧版零改动。
+- 绝不覆盖线上 config.php（含库密码）。
+- 改了 assets/app.css 后必须 php cli.php asset:minify 重生 app.min.css，并在所有 ?v= 引用处 bump。
+- 上线后访问一次后台触发 fly_db_migrate 自动建 post_likes / audit_logs 并补 posts 两列。
+- 本批次尚未上线；经用户确认后再走 FTP 部署。

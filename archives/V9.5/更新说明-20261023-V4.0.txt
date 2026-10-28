@@ -1,0 +1,72 @@
+FlyLog V4.0 更新说明（2026-10-23，第一轮-A）
+================================================
+版本演进：cp -r V3.51 → V4.0（旧版零改动保留）
+背景：小周截图反馈「首页」面包屑贴浏览器左边缘 + 拍板第五批(101-125 后台运营) + 第六批(126-150 编辑器/前端)。
+本轮只做「第一轮-A：面包屑贴边修复 + 前端交互基础」，分多轮接力，用户说「继续」即下一轮。
+
+一、面包屑贴边修复（核心痛点）
+- 病根：templates/parts/header.php 末尾的面包屑 `fly_tpl_breadcrumb()` 直接输出在 `.head-inner` 之外全宽区，未居中。
+- 修复：面包屑包进 `<div class="head-inner bc-bar">` 居中容器（1120px 居中 + padding），与顶部导航对齐；
+  app.css 新增 `.bc-bar{padding-top:10px;padding-bottom:0}`，面包屑自身 14px 下边距作间距。
+- 验证：首页源码出现 `head-inner bc-bar` + `class="breadcrumb"`，面包屑与站点标题左对齐、不再贴边。
+
+二、前端交互基础（第六批 126-150 子集，对应 127/141/142）
+- 新建 assets/app.js（head.php 已条件 defer 加载，存在才输出）：
+  · #142 回到顶部按钮：滚动超 300px 浮现，点击平滑回顶（fixed 圆形浮钮，z-index 60）。
+  · #127 文章正文图片懒加载兜底：`.post-body img` 无 loading 属性时自动补 `loading="lazy"` + `decoding="async"`。
+  · #135 侧边栏搜索防抖：输入停顿 500ms 自动提交搜索（?q=），避免逐字刷新。
+- app.css：#141 平滑滚动 `html{scroll-behavior:smooth}`，并 `@media (prefers-reduced-motion: reduce)` 关闭（无障碍）；
+  新增 `.back-top` 按钮样式（品牌色 + 悬浮加深 + 减少动效时去过渡）。
+
+三、预计阅读时间（对应 #144）
+- system/functions.php 新增 `fly_reading_time($content)`：去标签→去空白→按字符数 / 400（中文阅读速度），最少 1 分钟。
+- post.php 详情 meta 行追加「· 约 N 分钟」，与「阅读 X」并列。
+- 验证：长文详情页渲染 `阅读 1 · 约 3 分钟`。
+
+四、自定义 404 页面（对应 #128）
+- 新建根 404.php：沿用 parts/head/header/footer 主题，居中大号 404 + 「返回首页 / 浏览归档」双按钮。
+- .htaccess 追加 `ErrorDocument 404 /404.php`，未知路径 / 主机级 404 统一展示主题页。
+
+五、验证
+- 全量 lint：`php -d short_open_tag=1 -l` 50/50 PHP 0 错误。
+- 本地 SQLite 真机冒烟：安装(200) → 前台 /、/archive、/feed、/?q= 全 200；
+  面包屑容器化、app.js 带版本号加载、阅读时间渲染、404.php 结构均通过；服务器日志无 PHP Fatal/Error。
+- 无数据库结构变更（DDL 不变）→ 线上无需跑 install.php 迁移。
+
+六、部署文件清单（本轮增量，勿覆盖线上 config.php）
+- templates/parts/header.php
+- assets/app.css、assets/app.js（新增）
+- system/functions.php
+- post.php
+- 404.php（新增）
+- .htaccess
+注意：download.php / downloads/ 仍按小周要求「暂不部署」（线上保持 404）；config.php 保留线上现有 MySQL 版本，不覆盖。
+
+七、第一轮-B：编辑/前端增强（第六批 126-150 子集 + 第五批 107/109/141）
+- #126 文章目录 TOC：functions.php 新增 `fly_build_toc($content)`（扫描正文 h2/h3，注入锚点 id，已带 id 则复用，返回目录数组）；
+  post.php 有目录时渲染「📑 目录」卡片（h2/h3 两级缩进），锚点平滑跳转（配合 #141 平滑滚动）。
+- #130 代码高亮：head.php 引 highlight.js 11.9（cdnjs github 主题），app.js 自动 `hljs.highlightElement` 正文 `<pre><code>`；
+  CDN 加载失败自动降级为纯文本，不影响页面。
+- #137 复制带版权：选中 `.post-body` 文本复制时自动追加「—— 摘自《标题》@ URL」，已含版权不重复追加。
+- #139 标题点击复制：点击文章 H1 复制标题（toast 提示）。
+- #141 搜索联想：index.php 新增 `?suggest=1` 返回 JSON 标题列表；sidebar app.js 加防抖(250ms)联想下拉（↑↓ 选择、Enter 跳转、Esc 收起、点击外部关闭），原逐字防抖跳转保留。
+- #109 跨模块搜索：index.php 搜索时同时检索「已通过留言」，结果页追加「留言中命中」区块（链接到对应文章锚点）。
+- #107 后台缓存一键清理：admin/index.php 仪表盘新增「缓存与维护」面板 + 「清空文件缓存」按钮（POST + CSRF），调用已有 `fly_cache_clear()` 清 cachedir。
+
+八、验证（1-B）
+- 全量 lint：50/50 PHP 0 错误；`node --check assets/app.js` 通过。
+- 本地 SQLite 真机冒烟：安装(200) → 详情页 TOC(sect-1/2/3 + 📑目录)、代码高亮 hook(language-php)、
+  跨模块搜索(留言命中「续航」区块)、搜索联想 JSON(`?suggest=1&q=航拍` 返回该文) 全部 FOUND；服务器日志无 PHP Fatal/Error。
+- ⚠️ 关键修复：`assets/app.css` 改完必须重跑 `php cli.php asset:minify` 再生 `assets/app.min.css`——
+  head.php 优先加载 app.min.css，若不重生，新样式被旧压缩版盖住不生效（1-A/1-B 的 CSS 全部依赖这一步，已重生 11854B/省 8.3%）。
+- 无 DDL 变更 → 线上无需跑 install.php 迁移。
+
+九、部署文件清单（1-B 增量，勿覆盖 config.php，且必须带上新生成的 app.min.css）
+- system/functions.php
+- post.php、index.php、admin/index.php
+- templates/parts/head.php
+- assets/app.css、assets/app.js、assets/app.min.css（必须重生）
+
+十、待续（下一轮「继续」，已做项已移除）
+- 第五批(101-125)剩余：仪表盘图表(ECharts/Chart.js)、批量操作、回收站(30天)、操作日志、系统健康页、垃圾评论标记、用户重置/封禁、文章预览、通知中心、附件复制 MD、菜单拖拽、多管理员角色菜单、全屏、阅读量字段、数据清理、备案/联系/打赏配置、插件冲突检测、Logo/Favicon 上传、主题编辑器、密码强度条、定时备份(7天)、WP/Z-Blog 导入、清测试数据。
+- 第六批(126-150)剩余：Mermaid、KaTeX、PWA、骨架屏、无限滚动、页面过渡、ARIA、点赞分享、暗黑过渡、视差、拖拽上传、粘贴过滤、移动抽屉菜单、标签云。

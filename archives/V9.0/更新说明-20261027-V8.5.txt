@@ -1,0 +1,139 @@
+========================================================
+FlyLog V8.5 更新说明
+发布日期：2026 年 10 月 27 日
+版本定位：前台阅读体验增强（Reading Experience Boost）
+========================================================
+
+一、版本定位
+----------
+V8.5 是 FlyLog 在 V8.0（主题与外观系统 2.0）之上的「前台阅读体验」专项版本。
+本版聚焦一个目标：让读者在文章页停留得更舒服、读得更顺、用得更顺手。
+我们沿用了 V8.0 确立的 CSS 变量 + data-theme 体系，把阅读相关的增强全部做成
+纯前端能力（样式 assets/read.css + 逻辑 assets/read.js），并新增了一个轻量
+服务端函数 fly_auto_internal_links() 用于文章内链自动解析。
+
+全程零新表、零新字段，老站升级只需增量上传 9 个文件（5 个新增 + 4 个改动），
+无需执行任何数据库迁移，延续 FlyLog「四库无关、零改库升级」的一贯原则。
+
+二、核心功能（维度一·前台阅读体验）
+--------------------------------
+1. 图片懒加载（LazyLoad）
+   - 文章内 <img> 自动追加 loading="lazy"，进入视口才加载，首屏更快；
+   - 配 .fly-lazy 淡入过渡，图片出现时柔和浮现，不再突兀闪现；
+   - 兼容不支持 loading 属性的旧浏览器，淡入动画仍生效。
+
+2. 代码高亮与一键复制（Highlight + Copy）
+   - 本地自托管 highlight.js（assets/highlight.min.js）与两套主题样式
+     （github / github-dark），彻底告别第三方 CDN，加载稳定且符合「本地化」要求；
+   - 代码块右上角自动浮现「复制」按钮，点击即复制源码到剪贴板，
+     失败自动降级到 execCommand 兜底；
+   - 高亮主题跟随站点主题：亮色用 github、暗色用 github-dark，
+     切换主题时实时替换样式表，无需刷新。
+
+3. 悬浮目录 TOC（Floating Table of Contents）
+   - 自动读取文章内 H2/H3 标题，生成悬浮目录并注入锚点 id；
+   - 滚动时基于 IntersectionObserver 做 scroll-spy，高亮当前阅读章节；
+   - 桌面端常驻右上悬浮卡片，移动端折叠为可点开面板，不挤占正文宽度。
+
+4. 阅读进度条（Reading Progress Bar）
+   - 页面顶部极细进度条，随正文滚动实时填充，一眼掌握读完比例；
+   - 与固定导航栏共存在顶部，不遮挡内容。
+
+5. 阅读时间预估（Reading Time）
+   - 复用 V8.0 已有的 fly_reading_time()：按中文字数 ≈ 300 字/分钟估算，
+     文章头部展示「约 X 分钟阅读」，帮助读者决策是否现在读。
+
+6. 图片灯箱（Lightbox）
+   - 点击文章内任意图片进入全屏灯箱，背景遮罩 + 居中大图；
+   - 支持上一张/下一张切换、键盘 ←/→/Esc 操作、多图自动计数（3 / 12）；
+   - 关闭即回原位，移动端手势友好。
+
+7. 暗黑模式平滑切换（Smooth Theme Transition）
+   - 在 V8.0 主题系统之上，新增 html.fly-theme-anim 过渡类：
+     切换主题时对背景/文字/边框做短促过渡，告别硬切闪烁；
+   - 该过渡仅作用于「切换瞬间」，正常阅读不受影响，不拖慢滚动。
+
+8. 锚点平滑滚动（Smooth Anchor Scroll）
+   - 点击目录、页内锚点、面包屑内链时平滑滚动到目标；
+   - 自动补偿固定导航栏高度，落点不被顶栏遮盖，体验连贯。
+
+9. 移动端抽屉侧边栏（Mobile Drawer）
+   - 窄屏下，正文旁栏（分类、标签云、最新文章等）收进抽屉，
+     由左上角汉堡按钮 .fly-hamburger 唤出，侧栏以 transform 滑入；
+   - 适配手机/平板阅读，正文宽度优先，侧栏不抢版面。
+
+10. 纯文字模式（Text-Only Mode）
+    - 阅读工具栏一键切换纯文字模式（html.fly-text-only）：隐藏图片与装饰，
+      仅留排版文字与代码，适合弱网或专注速读；
+    - 同时复用了 V8.0 已有的服务端 ?text=1 纯文字视图，客户端与服务端双通道可用；
+    - 选择写入 localStorage，下次访问自动沿用。
+
+11. 字体大小调节（Font Size）
+    - 阅读工具栏提供 A- / A+ 调节，以 CSS 变量 --fly-fs 控制正文基准字号；
+    - 5 档可选，选择记忆在 localStorage，照顾不同视力与设备。
+
+12. 复制防抄袭提示（Copy Protection）
+    - 监听选中复制，当用户复制超过 50 字时，自动在剪贴板内容末尾追加出处：
+        —— 本文来自《站点名》
+        原文链接：文章 URL
+        © 版权所有
+    - 既尊重转载 attribution，又不干扰正常短句复制与代码复制（代码块内不触发）。
+
+13. 文章内链自动解析（Auto Internal Links）★新增 PHP 函数
+    - 新增 fly_auto_internal_links($html, $excludeId)：扫描正文文本片段，
+      把出现频率高的「其他已发布文章标题」自动替换为指向该文章的站内链接；
+    - 仅作用于纯文本片段，自动跳过 <a>/<pre>/<code>/<script>/<style>/<textarea>，
+      代码块与已有链接不会被误伤；
+    - 同一标题每片段只替换首次出现，长标题优先匹配，避免短词误替换；
+      当前文章自身标题不会被自链（excludeId 排除）；
+    - 显著提升站内内容互通与 SEO 内链密度，纯函数 + 静态缓存，性能无忧。
+
+14. 外链自动加 nofollow（External nofollow）— 沿用增强
+    - 复用 V8.0 fly_process_content()：正文外链自动加 rel="nofollow ugc"，
+      内部链接不加，利于权重不外泄。
+
+15. 外链跳转提示（External Leave Modal）
+    - 点击站外链接弹出轻量确认框「你即将离开本站，是否继续？」，
+      可取消，避免读者误触跳走；内部链接直跳不弹窗。
+
+三、新增 / 改动文件清单
+--------------------
+新增：
+  assets/highlight.min.js              本地 highlight.js 核心（自托管，非 CDN）
+  assets/highlight-github.min.css      highlight 亮色主题
+  assets/highlight-github-dark.min.css highlight 暗色主题
+  assets/read.css                      阅读体验样式（进度条/TOC/灯箱/工具栏/抽屉/纯文字/字号）
+  assets/read.js                       阅读体验逻辑（IIFE，无全局污染）
+
+改动：
+  system/bootstrap.php                 FLY_VERSION 8.0 → 8.5
+  system/functions.php                 新增 fly_auto_internal_links()（注入于 fly_process_content 之后）
+  post.php                             $post['content'] 经 fly_auto_internal_links() 处理（排除自身）
+  templates/parts/head.php             本地化 highlight（去 cdnjs）+ 引入 read.css/read.js（is_file 守卫）
+                                        + 暴露 window.FLY_SITE_NAME 供复制防抄袭与灯箱使用
+
+四、技术要点
+----------
+- 资源版本控制：read.css/read.js/highlight.* 为独立文件，不进入 app.css 的
+  asset:minify 压缩链路，各自带内容 MD5 版本号（fly_asset），互不干扰、刷新可控。
+- 主题联动：read.js 监听 data-theme 变化，平滑过渡类 + 实时切换高亮主题样式表。
+- 性能：懒加载降低首屏请求；内链解析静态缓存标题映射；IntersectionObserver
+  替代滚动监听，省电省 CPU。
+- 兼容：移动端抽屉、纯文字、字号均以 localStorage 记忆，跨会话保持。
+
+五、升级方式（博客站增量部署）
+----------------------------
+1. 用 FTP 单连接上传以上 5 个新增文件 + 4 个改动文件到站点根（/wwwroot），
+   字节校验一致即可；无需执行任何数据库迁移（无新表/新字段）。
+2. 切勿覆盖线上 config.php（铁律）。
+3. 本版未改动 download.php / downloads / 数据目录，保持不部署。
+
+六、下一批预告
+------------
+V9.0（维度二·后台站长管理）：内容批量操作、草稿预览、友情链接管理、
+SEO 字段可视化编辑、媒体库缩略图、操作日志导出等。
+另：博客侧 /download.php 半部署遗留（仍显「安装包打包中」）仍待拍板处理。
+
+========================================================
+                         — FlyLog Team · 2026-10-27
+========================================================

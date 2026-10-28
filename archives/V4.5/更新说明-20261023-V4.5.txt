@@ -1,0 +1,91 @@
+FlyLog V4.5 更新说明（2026-10-23 晚）
+================================================
+版本演进：cp -r V4.0 → V4.5（旧版零改动保留）
+定位：功能总数冲 200 —— 第七批(151-175 全站 SEO 进阶与流量分发) +
+      第八批(176-200 多语言/无障碍/前端体验)，分多轮接力，小周说「继续」即下一轮。
+品牌动作（小周要求）：页脚署名统一为「Powered by FlyLog PHP」（学 Z-Blog 的
+      "Powered by Z-BlogPHP"：无版本号、无标语，极简），配合「推向大众」去致敬化。
+
+一、品牌与版本
+- 页脚只保留：Powered by FlyLog PHP（templates/parts/footer.php，去掉 V 版本号与标语）。
+- FLY_VERSION = 4.5（API/后台可见，前台不显示）。
+- app.css 注释里的「Z-Blog 式」字样清除（代码层致敬痕迹清零；更新说明 txt 为本地档案，不随前台输出）。
+
+二、第七批第一批（本轮落地 8 项）
+- #151 Sitemap 增强：sitemap.php URL 改走 fly_url 规则（自定义伪静态自动适配）、
+  补分类页 URL、首页/归档 lastmod=最新文章时间、5000 条上限保护；
+  admin/settings.php 新增「SEO 与搜索引擎收录」面板：sitemap 地址 + 百度站长平台 /
+  Google Search Console / Bing 站长工具一键提交入口 + OG 封面配置 + 百度推送 token 配置位。
+- #153 JSON-LD 增强：fly_tpl_seo 支持多段结构化数据；
+  首页输出 WebSite(含 SearchAction 站内搜索) + Blog + BreadcrumbList；
+  详情页 BlogPosting(补 image) + BreadcrumbList；归档页 BreadcrumbList。
+- #154 canonical：fly_canonical_url() 按当前路径去 query 输出（/?q=x 等动态页 canonical 归一，防重复内容降权）。
+- #155 图片 alt 兜底：app.js 对 .post-body 无 alt 图片按文件名清洗填充（SEO + 无障碍）。
+- #156 外链 rel=nofollow ugc：fly_process_content() 渲染前给非同站外链补 rel，已有 rel/站内链接不动。
+- #161 OG 卡片 + 默认封面：og:image 取文章首图 > 配置 site.og_image > assets/og-cover.png
+  （纯 PHP 无 GD 手写 PNG 编码器生成 1200x630 深蓝渐变封面，7594B）。
+- #168 HTML 输出压缩：fly_compress_html() 去注释+压空白，bootstrap 以 ob_start 注册；
+  script/style/pre/textarea 保护段（JSON-LD 实测压缩后三段全部 VALID）；debug/api/cli/静态构建不启用。
+- #172 中英文混排自动加空格：fly_process_content() 内中→英/英→中双向补空格（已有空格不重复）。
+
+三、第八批第一批（本轮落地 7 项）
+- #177 ARIA：header 导航 aria-label、搜索表单 role="search" + aria-label、TOC/面包屑已有 aria-label。
+- #178 键盘焦点高亮：:focus-visible 统一 2px 品牌色 outline。
+- #179 跳过导航直达正文：header.php 输出 .skip-link，index/post 主列 id="fly-main"。
+- #180 动画一键关闭：右下「✨ 动画开/已关」浮动按钮，body.no-anim 全局去过渡动画，
+  localStorage 记忆（照顾晕动症/前庭敏感用户）。
+- #183 移动端点击区域 >=44px：.btn/.back-top/.fx-toggle/.speak-btn/搜索框按钮 min-height:44px。
+- #187 纯文字模式：?text=1 不加载任何 CSS/JS/图片，内联极简样式，省流量秒开。
+- #191 语音朗读：文章页「🔊 朗读」按钮，Web Speech API 朗读正文（zh-CN），再点停止；不支持则隐藏。
+
+四、验证
+- 全量 lint：php -d short_open_tag=1 -l 50/50 PHP 0 错误；node --check app.js 过。
+- 本地 SQLite 真机冒烟：install 200 → canonical/WebSite/SearchAction/og:image/BreadcrumbList 全 FOUND；
+  外链 nofollow ugc、中英文空格（「无人机 Drone 状态」）、TOC、压缩后 JSON-LD 三段 VALID、
+  sitemap XML OK(4 urls)、?text=1 跳过全部资源；服务器日志无 PHP Fatal/Error。
+- 无 DDL 变更 → 线上无需跑 install.php 迁移。
+
+五、部署（已上线 ✅）
+- FTP 主机 = www.flylog.zone.id（21 端口通；面板 mf.iqy.im 也通但站点 FTP 走域名）。
+  凭据不落盘（命令行直传），FlyLog-Manager/ftp_config.json 仍为模板（未写入真实凭据，合规）。
+- 上传 19 个差异文件（diff V3.51↔V4.5 得出）：.htaccess、404.php、admin/index.php、
+  admin/settings.php、archive.php、assets/app.css、app.js、app.min.css、og-cover.png、
+  index.php、post.php、sitemap.php、system/bootstrap.php、system/functions.php、
+  system/template.php、templates/parts/{footer,head,header,sidebar}.php。
+  未上传/未覆盖：config.php（保留线上 MySQL 凭据版）、install.php（无 DDL 变更）、
+  download.php/downloads/（小周硬要求，线上保持 404）。
+- 线上联调：首页 200（页脚「Powered by FlyLog PHP」+ canonical/og:image/og-cover/WebSite/
+  BreadcrumbList 全 FOUND）；/post/1.html 200（BlogPosting+BreadcrumbList+canonical）；
+  /archive /feed /sitemap.xml(4 urls, XML OK) /admin/login /?q= 全 200；
+  404.php 404、download.php 404、system 守卫 404；API info 报 version=4.5/driver=mysql/posts=1（数据完好）；
+  后台 xiaozhou 登录 302 → 仪表盘 200（「缓存与维护」面板 + 清空缓存按钮在位）。
+
+六、第七批(151-175) 清单进度
+  ✅ #151 Sitemap增强+后台提交入口（自动Ping/IndexNow待做，见下）
+  ✅ #153 JSON-LD 增强（Article/BreadcrumbList/WebSite）
+  ✅ #154 canonical
+  ✅ #155 图片 alt 自动
+  ✅ #156 外链 rel=nofollow ugc
+  ✅ #161 OG 卡片（含默认封面 + 后台可配）
+  ✅ #168 HTML 压缩
+  ✅ #172 中英文混排空格
+  ⏳ 待续：#152 自动 Ping 搜索引擎、#157 404 智能推荐、#158 AMP、
+    #159 死链检测报告、#160 摘要手动覆盖（需 DB 字段）、#162 标签页独立 TDK（依赖标签系统）、
+    #163 标题分隔符自定义、#165 robots 可视化编辑、#166 RSS 订阅按钮显式化、
+    #167 爬虫预渲染快照、#169 阅读量/点赞微数据、#170 标题层级检测、
+    #171 SEO 评分看板、#173 百度主动推送 API（token 配置位已留）、#174 面包屑 JSON-LD（✅已随 #153 落地）、
+    #175 Bing IndexNow。
+
+七、第八批(176-200) 清单进度
+  ✅ #177 ARIA、#178 键盘焦点、#179 跳到正文、#180 动画开关、#183 44px、#187 纯文字模式、#191 语音朗读
+  ⏳ 待续：#176 i18n 框架（zh/en.json + 切换器 + URL 前缀）、#181 多语言文章绑定、
+    #182 浏览器语言自动重定向、#184 图片占位/AI alt、#185 WCAG 对比度、
+    #186 表单 aria-describedby、#187-2 错误提示图标化、#188 盲文 DOM 优化、
+    #189 视频字幕稿、#190 弹窗焦点锁定、#192 生僻字注音、#193 时区自适应、
+    #194 日期格式本地化、#195 数字千分位、#196 高对比度模式。
+
+八、待续（下一轮「继续」优先候选）
+- 第七批热门：#152 自动 Ping、#157 404 智能推荐、#165 robots 可视化编辑、
+  #171 SEO 评分看板、#173 百度主动推送（配置位已留）。
+- 第八批门面：#176 i18n 框架（中英切换，推向大众的招牌功能）。
+- V4.0 第五批剩余：仪表盘图表、批量操作、回收站、操作日志、系统健康页等。

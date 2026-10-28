@@ -1,0 +1,360 @@
+/* =====================================================================
+ * FlyLog V6.5 · 后台登录页专用样式（Z-Blog 风格卡片式登录）
+ * 独立于前台 assets/app.css，仅 admin/login.php 引用。
+ * 品牌色：Navy #0A2A5E / Ink #081E42 / Signal Blue #1F6FEB
+ *        Aero Cyan #22D3EE / Cloud #F4F7FB
+ * ===================================================================== */
+
+:root {
+  --navy: #0A2A5E;
+  --ink: #081E42;
+  --blue: #1F6FEB;
+  --blue-dark: #1857C4;
+  --cyan: #22D3EE;
+  --cloud: #F4F7FB;
+  --bg: #EEF1F6;
+  --card: #FFFFFF;
+  --text: #1F2937;
+  --text-2: #5B6675;
+  --muted: #8A94A6;
+  --line: #DCDFE6;
+  --err: #D93026;
+  --err-bg: #FDECEA;
+  --warn: #B26A00;
+  --warn-bg: #FFF4E5;
+  --info: #1F6FEB;
+  --info-bg: #EAF2FE;
+  --radius: 12px;
+  --shadow: 0 18px 48px rgba(8, 30, 66, .12);
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body.login-body {
+  margin: 0;
+  background: var(--bg);
+  background-image:
+    radial-gradient(1200px 600px at 8% -10%, rgba(31, 111, 235, .10), transparent 60%),
+    radial-gradient(900px 500px at 110% 110%, rgba(34, 211, 238, .12), transparent 60%),
+    linear-gradient(180deg, #F4F7FB 0%, #E9EDF4 100%);
+  color: var(--text);
+  font: 14px/1.6 "Inter", "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI",
+        "PingFang SC", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* ---------- 外壳：左品牌 + 右卡片 ---------- */
+.login-shell {
+  width: 100%;
+  max-width: 940px;
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  min-height: 520px;
+}
+
+/* ---------- 左：品牌区 ---------- */
+.login-brand {
+  position: relative;
+  padding: 40px 34px;
+  color: #fff;
+  background: linear-gradient(160deg, #16407E 0%, var(--navy) 45%, var(--ink) 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.login-brand::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(420px 220px at 100% 0%, rgba(34, 211, 238, .22), transparent 70%),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, .045) 0 1px, transparent 1px 14px);
+  pointer-events: none;
+}
+.brand-mark { display: flex; align-items: center; gap: 12px; position: relative; z-index: 1; }
+.brand-logo { border-radius: 12px; box-shadow: 0 8px 20px rgba(0, 0, 0, .28); }
+.brand-text { display: flex; flex-direction: column; line-height: 1.25; }
+.brand-text strong { font-size: 20px; letter-spacing: .5px; }
+.brand-text span { font-size: 12px; color: rgba(255, 255, 255, .72); }
+
+.brand-title {
+  margin: 6px 0 0;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  position: relative; z-index: 1;
+}
+.brand-desc {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, .78);
+  position: relative; z-index: 1;
+}
+
+.brand-list {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative; z-index: 1;
+}
+.brand-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, .88);
+}
+.brand-list .dot {
+  flex: 0 0 auto;
+  width: 7px; height: 7px;
+  margin-top: 7px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 0 4px rgba(34, 211, 238, .18);
+}
+
+.brand-foot {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, .62);
+  position: relative; z-index: 1;
+}
+.ver-badge {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .35);
+  background: rgba(255, 255, 255, .12);
+  color: #fff;
+  font-size: 11px;
+  letter-spacing: .5px;
+}
+
+/* ---------- 右：登录卡片 ---------- */
+.login-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 44px;
+  background: var(--card);
+}
+.login-card { width: 100%; max-width: 340px; }
+
+.card-head { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+.card-logo { border-radius: 10px; }
+.card-title { margin: 0; font-size: 20px; font-weight: 700; color: var(--ink); }
+.card-sub { margin: 2px 0 0; font-size: 12px; color: var(--muted); }
+
+/* ---------- 提示条 ---------- */
+.alert {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  border: 1px solid transparent;
+}
+.alert svg { flex: 0 0 auto; margin-top: 2px; }
+.alert-error { background: var(--err-bg); color: var(--err); border-color: #F5C6C2; }
+.alert-warn  { background: var(--warn-bg); color: var(--warn); border-color: #F2DDBB; }
+.alert-info  { background: var(--info-bg); color: var(--info); border-color: #C9DCFB; }
+
+/* ---------- 表单 ---------- */
+.field { margin-bottom: 16px; }
+.field > label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.input-wrap { position: relative; display: flex; align-items: center; }
+.input-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--muted);
+  pointer-events: none;
+}
+.input-wrap input {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px 0 38px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color .15s, box-shadow .15s;
+}
+.input-wrap input::placeholder { color: #B6BDC9; }
+.input-wrap input:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(31, 111, 235, .14);
+}
+
+.eye {
+  position: absolute;
+  right: 6px;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border: 0; background: transparent; color: var(--muted);
+  border-radius: 6px; cursor: pointer;
+}
+.eye:hover { color: var(--blue); background: var(--cloud); }
+.eye.on { color: var(--blue); }
+
+/* ---------- 验证码 ---------- */
+.captcha-row { display: flex; gap: 10px; align-items: center; }
+.captcha-input { flex: 1 1 auto; }
+.captcha-img {
+  flex: 0 0 auto;
+  height: 42px;
+  width: 120px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  display: block;
+}
+.captcha-img:hover { border-color: var(--blue); }
+
+/* ---------- 记住我 / 忘记密码 ---------- */
+.form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 4px 0 18px;
+  font-size: 13px;
+}
+.check { display: inline-flex; align-items: center; gap: 6px; color: var(--text-2); cursor: pointer; }
+.check input { width: 15px; height: 15px; accent-color: var(--blue); }
+.link-btn {
+  border: 0; background: none; padding: 0;
+  color: var(--blue); font-size: 13px; cursor: pointer; font-family: inherit;
+}
+.link-btn:hover { text-decoration: underline; }
+
+/* ---------- 登录按钮 ---------- */
+.btn-login {
+  width: 100%;
+  height: 44px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s, box-shadow .15s, transform .05s;
+  box-shadow: 0 6px 16px rgba(31, 111, 235, .28);
+}
+.btn-login:hover { background: var(--blue-dark); }
+.btn-login:active { transform: translateY(1px); }
+.btn-login:disabled { opacity: .75; cursor: progress; box-shadow: none; }
+
+/* ---------- 忘记密码说明 ---------- */
+.forgot-box {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: var(--cloud);
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+.forgot-box strong { display: block; margin-bottom: 6px; color: var(--ink); }
+.forgot-box p { margin: 0 0 6px; }
+.forgot-box ol { margin: 0 0 6px; padding-left: 18px; }
+.forgot-box code {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 12px;
+  color: var(--navy);
+}
+.forgot-box .muted { color: var(--muted); margin: 0; }
+
+/* ---------- 底部 ---------- */
+.login-foot {
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid #EEF0F4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.back-home { color: var(--blue); text-decoration: none; }
+.back-home:hover { text-decoration: underline; }
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 900px) {
+  .login-shell { grid-template-columns: 1fr; max-width: 420px; min-height: 0; }
+  .login-brand { display: none; }
+  .login-main { padding: 32px 26px; }
+}
+@media (max-width: 420px) {
+  body.login-body { padding: 14px; align-items: flex-start; }
+  .login-main { padding: 26px 20px; }
+  .login-foot { flex-direction: column; align-items: flex-start; gap: 6px; }
+}
+
+/* ---------- 深色模式（跟随系统） ---------- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0B1220;
+    --card: #111A2B;
+    --text: #E6EAF2;
+    --text-2: #A9B4C6;
+    --muted: #7C8798;
+    --line: #26324A;
+    --err-bg: #3A1D1B; --err: #FF8A80;
+    --warn-bg: #3A2C12; --warn: #FFC46B;
+    --info-bg: #16294A; --info: #7FB0FF;
+  }
+  body.login-body {
+    background-image:
+      radial-gradient(900px 500px at 8% -10%, rgba(31, 111, 235, .18), transparent 60%),
+      radial-gradient(800px 450px at 110% 110%, rgba(34, 211, 238, .14), transparent 60%),
+      linear-gradient(180deg, #0B1220 0%, #0E1728 100%);
+  }
+  .login-shell { box-shadow: 0 18px 48px rgba(0, 0, 0, .5); }
+  .input-wrap input { background: #0D1526; color: var(--text); }
+  .input-wrap input::placeholder { color: #5B6779; }
+  .captcha-img { background: #0D1526; }
+  .forgot-box { background: #0D1526; }
+  .forgot-box code { background: #111A2B; color: #9FC6FF; }
+  .login-foot { border-top-color: #1B2438; }
+  .brand-list .dot { box-shadow: 0 0 0 4px rgba(34, 211, 238, .14); }
+}
+
+/* ---------- 减少动效 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}

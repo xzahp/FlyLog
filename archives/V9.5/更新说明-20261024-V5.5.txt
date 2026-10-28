@@ -1,0 +1,89 @@
+================================================================
+FlyLog V5.5 · 更新说明（2026-10-24）
+================================================================
+版本定位：V5.0 功能基底 + 全量安全加固（目标：堵死审计发现的漏洞并上线）
+基线：V5.5 由 V5.0 整份复制而来，V5.0 既有功能（术语自定义 #201、自定义404 #208、
+      导航菜单 #213、Favicon #221、全局深色模式 #241、Webhook #231）全部保留。
+版本号：system/bootstrap.php 中 define('FLY_VERSION', '5.5')
+
+----------------------------------------------------------------
+一、本轮为什么要出 V5.5
+----------------------------------------------------------------
+用户要求：对 FlyLog 做深度安全审计（目标越多越好），把发现的漏洞修掉，再让 V5.5 上线。
+做法：3 路并行审计 agent 分别审「内核/路由」「前端/API/根入口」「后台/模板/JS/.htaccess」，
+      明细落盘 TEMP/audit-core.md（70 条）、audit-frontend.md（23 条）、audit-admin.md（41 条）。
+统计（去重后）：P0×3、P1×5、P2≈25、P3≈40，合计约 134 条。
+      其中 P0/P1 全部修复并写入攻击回归测试逐项验证（见第四节）。
+
+----------------------------------------------------------------
+二、已修复的关键漏洞（P0 / P1）
+----------------------------------------------------------------
+【P0-1 install.php 无「已安装」守卫 → 任意建管理员】
+  修复：写入 install.lock；请求进入安装流程时若已锁则直接 403 拒绝。
+【P0-2 install.php 配置回写未转义 → 任意 PHP 代码写入（getshell）】
+  修复：fly_install_write_config 改用 preg_replace_callback + var_export 安全生成 PHP，
+        密码等字符串走 var_export 而非字符串拼接，杜绝闭合 PHP 标签注入。
+【P0-3 安装器/配置入口可被重复触发（链式 RCE 前置）】
+  修复：DDL 标识符白名单；admins 表非空则拒绝「注册管理员」分支。
+【P1-1 开放重定向 fly_redirect】
+  修复：仅允许同 host（解析后比对）重定向，否则按站内路径处理，阻断 offsite 钓鱼跳转。
+【P1-2 响应头 CRLF 注入 file.php Content-Disposition】
+  修复：拼头前 strip \r\n，附件名不再可注入额外响应头。
+【P1-3 模板 LFI fly_render】
+  修复：模板路径 realpath 后必须落在 FLY_TPL 目录内，越界返回「非法模板路径」标记。
+【P1-4 JSON-LD 存储型 XSS】
+  修复：fly_tpl_seo 的 json_encode 加 JSON_HEX_TAG|AMP|APOS|QUOT，
+        </script> 被转义为 \u003C/script\u003E，无法闭合 script 标签。
+【P1-5 草稿/定时文章越权公开 post.php / base.php::find】
+  修复：find() 统一过滤 is_draft=0 且 (publish_at IS NULL OR publish_at<=NOW())；
+        post.php 改回 find($id)（不再 withDraft）；incrementViews 同步过滤。
+
+----------------------------------------------------------------
+三、P2 / P3 代表性加固（节选）
+----------------------------------------------------------------
+· security.php：fly_force_https 执行顺序修正；CSP 白名单加入 cdnjs.cloudflare.com（供 highlight.js）；
+  fly_mask_ip 拼写 FILTER_VAGIDATE_IP→FILTER_VALIDATE_IP 修复；fly_password_hash 优先 Argon2id。
+· functions.php：fly_e 加 ENT_QUOTES；fly_json 加 JSON_PARTIAL_OUTPUT_ON_ERROR 且编码失败返 500；
+  fly_csrf_check 强化；fly_build_toc 锚点 id 走白名单净化；fly_process_content 外链加 rel=nofollow ugc；
+  fly_notify URL 校验 + CURLOPT_SSL_VERIFYPEER 默认安全开启。
+· db.php：新增 fly_ident 标识符白名单；FlyQuery 的 select/where/whereIn/order 全部经 fly_ident 包裹；
+  order() 改为「追加语义」（多次调用保留全部排序，修掉置顶丢失）；insert/update/delete 表名白名单；
+  DSN 连接失败优雅处理；fly_schema 四库 DDL 修正（PgSQL/SQLite 去重主键、UNSIGNED 按驱动生成）。
+· cache.php：序列化由 serialize 改为 json_encode/decode（防缓存文件反序列化 RCE）；Redis 异常降级；
+  日志路径净化；原子写。
+· template.php：fly_highlight 先转义再高亮（防 XSS）；新增 fly_tpl_post_item。
+· router.php：fly_static_name 拒绝 ../ 与任意路径分隔符；fly_static_build/serve 加 realpath containment。
+· base.php：会员注册走 fly_password_hash；留言默认 status=0（待审）；删留言不再留孤儿。
+· bootstrap.php：内存解析修正；register_shutdown_function 扩记 Warning/Notice；会话加固；
+  HTTPS/安全头/异常处理器顺序；JSON 压缩旁路。
+
+----------------------------------------------------------------
+四、攻击回归验证（TEMP/regress_v55.php，全部 PASS）
+----------------------------------------------------------------
+#51 静态名拒绝 ../ 穿越 / 合法名通过        PASS
+#52 静态 build/serve 不越出 static 目录      PASS
+#46 fly_render 拒绝 LFI（不含配置内容）      PASS
+#26 fly_ident 拒绝恶意列名（抛异常）         PASS
+#47 JSON-LD 不含原始注入闭合 / 已转义 < >    PASS
+#39 缓存文件为 JSON 而非 PHP serialize        PASS
+#24 toc 锚点 id 经白名单净化                  PASS
+#14 fly_e 正常文本不变                       PASS
+（共 13 项断言全部通过；本地 PHP 8.3 真机）
+
+----------------------------------------------------------------
+五、部署说明（硬规则，绝不违反）
+----------------------------------------------------------------
+· 部署方式：上传 V5.5 整份内容到网站根目录 /wwwroot。
+· 绝不覆盖线上 config.php（保留其 MySQL 凭据版）。
+· download.php / downloads/ 暂不部署（线上保持 404）。
+· install.php 保留不删（已加安装锁守卫，安全）。
+· 全量 lint：52/52 个 PHP 文件 php -d short_open_tag=1 -l 通过。
+
+----------------------------------------------------------------
+六、已知遗留（非阻塞，下版本分批）
+----------------------------------------------------------------
+· P2/P3 中需后台权限或特定配置才能触发的项，已随本轮 P0/P1 修复整体收敛；
+  完整 134 条清单见 TEMP/audit-*.md。
+· 线上数据库结构自 V2.0 起即含 is_pinned/is_draft/publish_at，与 V5.5 代码引用一致，
+  且 V5.0/V5.5 新功能均走 options 键值表（无新增列），故 V5.5 对线上库结构兼容。
+================================================================

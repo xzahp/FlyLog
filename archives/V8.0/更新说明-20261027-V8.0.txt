@@ -1,0 +1,79 @@
+========================================================
+FlyLog V8.0 更新说明
+发布日期：2026 年 10 月 27 日
+版本定位：主题与外观系统 2.0（Theme & Appearance System）
+========================================================
+
+一、版本定位
+----------
+V8.0 是 FlyLog 在 V7.0（内容组织层 + 互动运营）基础上的外观大版本。
+本版把原先「仅暗色/亮色跟随系统」的朴素能力，升级为完整的多主题体系：
+访客可在前台一键切换亮色 / 暗色 / 极光（蓝紫）/ 暖阳（橙金），选择记忆在
+浏览器本地；站长可在后台设定默认主题并决定是否开放访客切换。
+全程纯前端 CSS 变量 + 一行 data-theme 属性实现，四库（MySQL/MariaDB/PgSQL/SQLite）
+完全无关，无需任何新表或新字段，老站升级零改库。
+
+二、核心功能
+----------
+1. 多主题体系（5 选 1）
+   - 跟随系统（auto）：未手动选择时自动跟随系统 prefers-color-scheme 明暗；
+   - 亮色（light）：固定浅色；
+   - 暗色（dark）：固定深色（原 html.dark 框架升级而来）；
+   - 极光（aurora）：深蓝紫底 + 青蓝/品红点缀，科幻感；
+   - 暖阳（sunset）：深暖底 + 橙金点缀，温暖感。
+   主题即「覆盖一套 CSS 变量」，复制 assets/app.css 的变量块即可扩展更多主题，无需动 PHP。
+
+2. 访客一键切换 + 记忆
+   - 前台导航栏右侧新增主题切换下拉（仅当后台允许访客切换时显示）；
+   - 切换即时生效，选择写入 localStorage，下次访问自动沿用；
+   - auto 模式下实时监听系统明暗变化，无需刷新即更新视觉。
+
+3. 后台外观设置（新增「外观 / 主题」面板）
+   - 默认主题：访客未手动切换时的呈现（auto / light / dark / aurora / sunset）；
+   - 允许访客切换主题：开关。关闭后所有人仅显示后台设定的默认主题。
+
+4. 防闪白（FOUC）
+   - head.php 内联防闪白脚本在渲染前同步设定 <html data-theme>，主题变量立即生效，
+     页面不会出现「先白后黑」的闪烁。
+
+三、技术实现
+----------
+- 主题以 `<html data-theme="...">` + CSS 自定义属性（--bg/--surface/--brand …）表达；
+  切题就是覆盖变量，全站颜色随主题联动。
+- 切换逻辑（assets/theme.js）与切换器样式（assets/theme.css）独立成文件，
+  不进入 app.css 的压缩链路，各自带内容 MD5 版本号，互不干扰。
+- 默认主题与开关存于 options 表（theme_default / feature_theme_switch），
+  复用既有 fly_opt / fly_set_option / fly_feature 机制，四库通用。
+- 原 app.css 的 html.dark + 系统跟随媒体查询，统一改写为 [data-theme] 选择器
+  并保留 html.dark 兼容别名；新增 [data-theme="aurora"] / [data-theme="sunset"]。
+
+四、新增 / 改动文件清单
+--------------------
+新增：
+  system/theme.php        主题模块（fly_theme_list / fly_theme_default / fly_theme_allow_switch / fly_theme_is_valid）
+  assets/theme.css        切换器 UI 样式（独立加载）
+  assets/theme.js         切换逻辑（localStorage 记忆 + 实时跟随系统）
+
+改动：
+  system/bootstrap.php     FLY_VERSION 7.0 → 8.0；在升级模块后 require theme.php
+  assets/app.css           变量区改为 [data-theme] 体系 + 新增 aurora/sunset
+  assets/app.min.css      由 php cli.php asset:minify 重生（17,434 B）
+  templates/parts/head.php 内联防闪白脚本改设 data-theme（读取后台默认主题）+ 引入 theme.css/theme.js
+  templates/parts/header.php  导航栏新增主题切换下拉（受后台开关控制）
+  admin/settings.php       新增「外观 / 主题」面板与对应 POST 处理
+
+五、升级方式（博客站增量部署）
+----------------------------
+1. 用 FTP 单连接上传以上「改动」文件 + 3 个新增文件到站点根（/wwwroot），
+   字节校验一致即可；无需执行任何数据库迁移（无新表/新字段）。
+2. 切勿覆盖线上 config.php（铁律）。
+3. 本版未改动 download.php / downloads / 数据目录，保持不部署。
+
+六、下一批预告（第四批）
+----------------------
+应用商城（插件/模板市集）+ 一次性下载令牌（防盗链/限次下载）。
+另：博客侧 /download.php 半部署遗留（仍显「安装包打包中」）仍待拍板处理。
+
+========================================================
+                         — FlyLog Team · 2026-10-27
+========================================================

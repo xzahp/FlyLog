@@ -1,0 +1,11 @@
+# FlyLog 伪静态规则
+# 作用：把 /post/123.html 转换为 /post.php?id=123
+# 依赖：主机开启 mod_rewrite（绝大多数虚拟主机默认支持）
+
+AddDefaultCharset UTF-8
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^post/([0-9]+)\.html$ post.php?id=$1 [L,QSA]
+  RewriteRule ^post/([0-9]+)/?$ post.php?id=$1 [L,QSA]
+</IfModule>

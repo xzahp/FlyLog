@@ -1,0 +1,43 @@
+# FlyLog V2.0 伪静态规则（Apache + mod_rewrite）
+# 位置无关：随版本文件夹整体上传到网站根目录即生效。
+<IfModule mod_rewrite.c>
+RewriteEngine On
+AddDefaultCharset UTF-8
+
+# SEO 入口
+RewriteRule ^sitemap\.xml$ sitemap.php [L]
+RewriteRule ^robots\.txt$ robots.php [L]
+
+# 内容页
+RewriteRule ^feed$ feed.php [L]
+RewriteRule ^archive$ archive.php [L]
+RewriteRule ^post/([0-9]+)\.html$ post.php?id=$1 [L]
+RewriteRule ^page/([0-9]+)$ index.php?page=$1 [L]
+</IfModule>
+
+# 保护敏感目录（双保险，目录内也有各自的 .htaccess）
+RedirectMatch 404 ^/(system|cachedir|logsdir|datadir|plugins|templates)(/|$)
+
+# =========================================================
+# #54 HTTP 强缓存：静态资源 7 天强缓存（配合 fly_asset 内容MD5版本号，
+# 文件一变版本号即变，老用户也能立刻拿到新文件）
+# =========================================================
+<IfModule mod_expires.c>
+ExpiresActive On
+ExpiresByType text/css "access plus 7 days"
+ExpiresByType application/javascript "access plus 7 days"
+ExpiresByType text/javascript "access plus 7 days"
+ExpiresByType image/jpeg "access plus 7 days"
+ExpiresByType image/png "access plus 7 days"
+ExpiresByType image/gif "access plus 7 days"
+ExpiresByType image/webp "access plus 7 days"
+ExpiresByType image/svg+xml "access plus 7 days"
+ExpiresByType image/x-icon "access plus 7 days"
+ExpiresByType font/woff "access plus 7 days"
+ExpiresByType font/woff2 "access plus 7 days"
+</IfModule>
+<IfModule mod_headers.c>
+<FilesMatch "\.(css|js|woff2?|png|jpe?g|gif|webp|svg|ico)$">
+Header set Cache-Control "max-age=604800, public"
+</FilesMatch>
+</IfModule>

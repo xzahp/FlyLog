@@ -1,0 +1,19 @@
+# FlyLog V2.0 伪静态规则（Apache + mod_rewrite）
+# 位置无关：随版本文件夹整体上传到网站根目录即生效。
+<IfModule mod_rewrite.c>
+RewriteEngine On
+AddDefaultCharset UTF-8
+
+# SEO 入口
+RewriteRule ^sitemap\.xml$ sitemap.php [L]
+RewriteRule ^robots\.txt$ robots.php [L]
+
+# 内容页
+RewriteRule ^feed$ feed.php [L]
+RewriteRule ^archive$ archive.php [L]
+RewriteRule ^post/([0-9]+)\.html$ post.php?id=$1 [L]
+RewriteRule ^page/([0-9]+)$ index.php?page=$1 [L]
+</IfModule>
+
+# 保护敏感目录（双保险，目录内也有各自的 .htaccess）
+RedirectMatch 404 ^/(system|cachedir|logsdir|datadir|plugins|templates)(/|$)

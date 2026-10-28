@@ -1,0 +1,92 @@
+====================================
+   FlyLog V2.0 更新说明
+   2026-10-22 · 大步升级（+1）
+====================================
+
+一句话：FlyLog 从「单数据库小博客」升级为「四数据库 + 插件化 +
+模板化 + 三模式」的轻量现代博客引擎，并新增下载页、全站 SEO、
+置顶定时、备份导出、缓存、JSON API、附件、登录注册与权限分级。
+按老规矩 cp -r V1.1 → V2.0，V1.1 及旧版零改动保留。
+全站已去除「致敬 Z-Blog」字样，独立品牌 FlyLog。
+
+------------------------------------
+一、架构升级（引擎层）
+------------------------------------
+1. PDO 数据库抽象层（system/db.php）
+   - 支持 MySQL / MariaDB / PostgreSQL / SQLite，安装时四选一。
+   - 统一预处理语句，防 SQL 注入；按驱动生成 DDL。
+   - SQLite 模式「上传即用」，无需建库（数据在 datadir/flylog.sqlite）。
+   - 链式查询构建器 FlyQuery（table/where/whereIn/order/limit…）。
+2. 数据模型基类化（system/base.php）
+   - BasePost / BaseMember / BaseComment，上层面向对象、不直接写 SQL。
+3. HOOK 插件机制（system/hooks.php）
+   - add_filter / add_action / apply_filters / do_action，核心与插件解耦。
+   - fly_load_plugins 按启用列表加载 plugins/ 下插件。
+4. 模板引擎 + 模板标签（system/template.php + templates/）
+   - fly_render 渲染模板文件；fly_tpl_seo / breadcrumb / post_item 等标签。
+   - 主题机制：换 assets/app.css 的 CSS 变量即得新主题，PHP 零改动。
+5. URL 规则模板 + 三模式（system/router.php）
+   - 可配置 URL 规则；静态 HTML / 伪静态 / 动态 三种模式切换。
+   - 静态模式命中快照直接输出，数据库连接降为 0。
+6. 四目录独立划分（bootstrap 自动创建并防直闯）
+   - system/ 内核 · cachedir/ 缓存与静态化 · logsdir/ 日志 ·
+     datadir/ 数据（SQLite/附件）· templates/ 模板 · plugins/ 插件。
+
+------------------------------------
+二、功能新增
+------------------------------------
+7. SEO 全链路（后台可视化配置，不碰代码）
+   - 每页 TDK（标题/描述/关键词）+ Open Graph + JSON-LD 结构化数据。
+   - sitemap.xml（/sitemap.xml）、robots.txt（/robots.txt）、面包屑。
+   - 后台「设置」页改 TDK/开关，存 options 表即时生效。
+8. 文章增强
+   - 置顶（is_pinned）、定时发布（publish_at）、草稿（is_draft）。
+   - 编辑器工具栏升级（加粗/斜体/标题/引用/列表/链接/代码/图片/分割线）。
+9. 登录注册 + 权限分级
+   - 前台会员登录/注册（account.php，≥8 位密码）。
+   - 后台角色：admin（全权）/ editor（仅文章+留言+改密），_init 统一鉴权。
+   - GitHub 登录（github.php OAuth，配置开关，未配置友好提示）。
+   - 在线升级检查（配置开关）。
+10. 留言增强：回复楼层（parent_id 父子渲染）+ 先审后发 + 邮件通知开关。
+11. 数据备份/导出（admin/backup.php）：导出 JSON / SQL / 下载 SQLite 文件。
+12. 文件缓存层（system/cache.php）：TTL 缓存 + 日志。
+13. 只读 JSON API（api/index.php）：posts / post / categories / comments / info。
+14. 附件上传下载（admin/attachments.php + file.php 受控输出）。
+15. 插件管理（admin/plugins.php）+ 示例插件 hello-flylog（演示 HOOK）。
+16. CLI 简化版（cli.php）：static:build / cache:clear / db:info。
+17. 下载页（download.php）：版本信息 + 特性 + 安装指引 + 安装包下载 + MD5。
+18. 安全：CSRF 全表单防护、IP+数据库级防爆破、登录日志、敏感目录防直闯、
+    附件目录穿越防护、输出全转义。
+
+------------------------------------
+三、数据库变化（V1.1 库平滑升级）
+------------------------------------
+- posts 新增 is_pinned / is_draft / publish_at。
+- comments 新增 parent_id（回复）。
+- admins 新增 role（角色）。
+- 新增表：members（会员）、attachments（附件）、options（可视化配置）。
+- 升级方法：用 V2.0 的 install.php 对旧库再跑一次，自动补表补列，不丢数据。
+  （install.php 已兼容：先选库再建库，适应虚拟主机无全局建库权的场景。）
+
+------------------------------------
+四、验证
+------------------------------------
+- php -l：V2.0 全部 47 个 PHP 文件 0 语法错误；
+  关键：统一用 `php -d short_open_tag=1 -l` 复测（虚拟主机常开短标签）。
+- 真机端到端（SQLite）：
+  · 安装器四选一 + 建 9 表 + 注册管理员，通过；
+  · 前台 14 页 / 后台 10 页 / API 3 路由全部 HTTP 200；
+  · 登录 302、未登录 302 拦截、留言审核全流程通过；
+  · 静态模式命中快照输出（X-FlyLog-Mode: static），数据库连接降为 0，通过；
+  · CLI static:build 生成整站快照，通过。
+- 安装包 downloads/FlyLog-V2.0.zip 已打包并校验（无测试数据，58 条目）。
+
+------------------------------------
+五、部署 / 使用
+------------------------------------
+- 新部署：上传 V2.0\ 整个内容到网站根目录 → 访问 install.php 选库注册 → 删 install.php。
+- SQLite 模式：上传即用，install.php 一键完成。
+- 切静态模式：config.php 的 site.mode 改 static，再跑 `php cli.php static:build`。
+- 回退：V1.0 / V1.01 / V1.1 文件夹原样保留。
+
+报告完 —— FlyLog V2.0，脱胎换骨，安心去飞 🚁

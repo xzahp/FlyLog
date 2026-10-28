@@ -1,0 +1,51 @@
+FlyLog V7.0 第三批 更新说明（2026-10-26）
+========================================
+
+本批交付「安装更稳妥 + 升级可感知」三件事：安装器环境自检、首次部署协议勾选、程序内自动检查更新。
+全部已在 V7.0/ 落地，本地回归 21/21 全绿（TEMP/test_v7b3.php）。
+
+一、安装器环境自检（install.php）
+--------------------------------
+- 新增 system/install_helper.php：fly_install_env_check() 在安装表单顶部渲染一张「环境自检」表。
+- 检测项：
+  · PHP 版本 ≥ 7.4（必需）
+  · 数据库驱动：SQLite（默认，必需）/ MySQL / PostgreSQL（选对应库时必需）
+  · 常用扩展：JSON / 多字节(mbstring) / 哈希(hash) 为必需；OpenSSL / cURL / GD 为可选（均有回退，缺失仅影响安全随机数 / 在线升级检查 / 图片处理）
+  · 目录可写性：程序根目录（写 config.php）、cachedir、logsdir、datadir、datadir/uploads
+- 任一「必需项」未通过时，表单顶部红色提示 + 注册按钮自动禁用，避免装到一半才报错。
+
+二、首次部署协议勾选（install.php）
+----------------------------------
+- 安装表单末尾新增「部署协议」区块：隐私政策 / 使用条款 / 著作权声明 三段摘要 + 必勾选框「我已阅读并同意」。
+- POST 校验：未勾选直接报错「请阅读并勾选部署协议后再继续」，不往下走。
+- 安装成功后 fly_install_record_agreement() 把存证写入 datadir/agreement.json（含接受时间、安装者、FlyLog 版本、三项协议标记），可追溯、可审计。
+- 配套函数 fly_install_agreement_exists() 供后续「已同意」判断复用。
+
+三、程序内自动检查更新
+----------------------
+- 新增 system/upgrade.php（bootstrap 已在审计模块后引入）：
+  · fly_version_newer($latest,$current)：标准化版本号（忽略前导 v/V）后 version_compare 比较。
+  · fly_upgrade_fetch($url)：带 5s 超时的安全 GET——cURL 优先，失败退守 file_get_contents；
+    仅放行 http/https（拒绝 file:// 等，收窄 SSRF）；返回解析后的 JSON 数组，失败返回 null 不抛异常。
+  · fly_upgrade_check($force)：读「在线升级检查」配置（settings 里的 upgrade_check 开关 + upgrade.check_url）；
+    仅当启用且地址非空才发起网络请求；命中新版返回 {available,latest,url,notes,current}，
+    已是最新/拉取失败返回 null；结果缓存 6 小时（失败占位 30 分钟），不频繁打外部接口。
+- 后台仪表盘（admin/index.php）接入：启用且确有新版时，顶部出现橙色横幅「🎉 发现新版本 FlyLog X.X（你当前 Y.Y）」+ 下载链接 + 说明；已是最新则不显示。
+- 后台「站点设置 → 在线升级检查」提示里给出官方地址 https://www.flylog.zone.id/version.json。
+- 下载站已新增 version.json（version/url/notes），与 V7.0 安装包对齐。
+
+四、顺带修复
+------------
+- 安装器环境自检曾经把 openssl 列为「必需」，会误伤有回退机制的环境；已改为可选（真正必需的只有 json/mbstring/hash + 默认 SQLite 驱动）。
+- fly_upgrade_check 缓存命中分支原本会把「已是最新」的缓存数组当作结果返回，导致仪表盘对已是最新的站点也弹更新横幅；已加 available 标记，缓存命中仅在有可用更新时返回结果。
+
+五、四库兼容 & 迁移
+-------------------
+本批无新增数据表/字段；upgrade.php 与 install_helper.php 仅定义函数，不触碰 schema。
+
+六、上线部署提醒（部署博客站时）
+------------------------------
+- 增量上传本批变更文件即可，线上首次访问仍由 fly_db_migrate() 自动补表补列（本批无新表）。
+- 铁律：绝不覆盖线上 config.php。
+- 若要把「自动检查更新」用起来，登录后台 → 站点设置 → 勾选「启用在线上级检查」并填 version.json 地址（默认提示已给官方地址）。
+- 下载站：version.json 与 FlyLog-V7.0.zip 需随本批一并上传（version.json 在站点根，zip 在 downloads/）。

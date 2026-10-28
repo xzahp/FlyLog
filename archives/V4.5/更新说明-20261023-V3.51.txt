@@ -1,0 +1,87 @@
+FlyLog V3.51 更新说明（2026-10-23）
+====================================
+
+一、布局修复（小周截图反馈：FlyLog 标题/右侧导航贴浏览器边缘）
+------------------------------------------------------------
+病根：.site-head 没做容器化，直接全宽 flex，标题贴左边缘、导航贴右边缘。
+学习 Z-Blog 的做法——「通栏横线 + 内部居中容器」：
+
+  1. templates/parts/header.php：标题与导航包进 .head-inner 容器
+  2. assets/app.css：
+     · .site-head 改为全宽（只留底边线），padding 移到内部容器
+     · 新增 .head-inner{max-width:1120px;margin:0 auto;padding:16px 20px}
+       ——左右各 20px 留白，与内容容器对齐居中
+     · .wrap 内容区 960px → 1100px，与 header 容器视觉统一
+
+效果：FlyLog 左上、导航右上都有了呼吸感，整站内容居中，和 Z-Blog 一样的版式。
+
+二、第三批：性能优化与底层机制（51-75）
+------------------------------------------------------------
+已落地（18 项）：
+  #52 复合索引：install.php 升级段自动建 5 个索引
+      posts(is_pinned,created_at) / posts(category) / posts(publish_at)
+      comments(post_id,status) / admin_logs(created_at)
+      （MySQL 无 IF NOT EXISTS，try/catch 兼容；线上已实测 5/5 创建成功）
+  #53 CSS 压缩：新增 fly_minify_css() + cli asset:minify 命令生成
+      assets/app.min.css；head 检测到 min 版自动优先加载，无则回退原版
+  #54 HTTP 强缓存：.htaccess 加 mod_expires + Cache-Control 7 天
+      （线上青云面板 CDN 已自带边缘缓存 X-Cache:HIT，本规则为源站兜底）
+  #55 资源版本号：新增 fly_asset()，按文件内容 MD5 生成 ?v=
+      ——文件一变版本号即变，强缓存老用户也能立刻拿到新文件
+  #56 模板渲染缓存：fly_render($tpl,$vars,$cacheKey,$ttl) 可选片段缓存，
+      命中跳过 PHP 解析执行（适合侧边栏等高频静态片段）
+  #57 大偏移量分页优化：BasePost::query 在 offset>=500 时自动改用
+      「廉价键查询定位边界 + 范围条件走索引」，避免 LIMIT 100000,10 全量回表
+  #59 孤儿附件清理：cli attachments:gc [--dry-run]
+      （自动跳过 uploads/index.php/.htaccess 等安全守卫，修了误判 bug）
+  #64 内存上限：bootstrap 只升不降（当前 <128M 才提到 128M，不覆盖主机配置）
+  #65 OpCache 检测：cli db:info 显示 PHP 版本/OpCache/memory_limit/索引清单
+  #66 DNS 预解析：head 加 dns-prefetch（同域，CDN/图床可后续扩展）
+  #67 异步加载 JS：head 检测 assets/app.js 存在才输出，带 defer 不阻塞渲染
+  #69 文件锁：缓存/日志写入均 LOCK_EX（V2.0 已具备，本次确认）
+  #70 日志按天切割：fly_log 按日期分文件 + 慢查询/慢请求日志同样按天
+  #71 断点续传：file.php 支持 Range（206 Partial Content / 416 / 后缀范围），
+      防盗链与 Content-Disposition 安全策略保留
+  #72 表单防重复提交：head 内联 JS，submit 即置灰拦截连点
+  #75 性能探针：双探针——SQL 执行 >1s 记 slow 日志（db.php）；
+      整页 >1s 记 slow 日志（bootstrap shutdown，含 URL + 内存峰值）
+  #51 Redis 缓存开关：cache.php 支持 driver=file|redis（默认 file，
+      无 phpredis 扩展自动回退，虚拟主机不受影响）
+
+按虚拟主机实际降级/说明（7 项，见自检报告「当前待办」）：
+  #58 异步任务队列：PHP 请求模型无常驻进程，发邮件/静态化走 CLI 即可
+  #60 对象池：PHP 每请求独立生命周期，不适用（单例模式 V2.0 已有）
+  #61 哈希路由：路由表极小，正则匹配开销可忽略
+  #62 读写分离：单库虚拟主机，预留 DB_* 配置结构
+  #63 OpCache：主机侧开启，db:info 可查状态
+  #68 Session 存储：默认 file 足够，大流量再考虑 DB/Redis 化
+  #73 preload：自站资源配合 CDN + MD5 版本号收益低，未加（避免双加载）
+
+三、验证
+------------------------------------------------------------
+· php -d short_open_tag=1 -l：49/49 个 PHP 全过
+· 本地 SQLite 真机：页面全 200、head-inner/资源版本号/dns-prefetch/防重提交
+  JS 均输出、Range 200/206/416 正确、CLI 三新命令可用、索引语法实测
+· 线上（MySQL）：install 平滑升级 5 索引创建成功、9 页 200、download 404、
+  页脚 V3.51、system 直闯 404、安全头 3 件套、登录/仪表盘正常、文章数据完好
+
+四、文件变动（V3.51 相对 V3.0）
+------------------------------------------------------------
+  system/bootstrap.php  版本号3.51 + memory_limit + 慢请求探针
+  system/functions.php  fly_asset / fly_minify_css / fly_site_host
+  system/cache.php      Redis 驱动分支（默认 file）
+  system/db.php         慢查询日志（>1s）
+  system/base.php       offset>=500 游标分页优化
+  system/template.php   fly_render 片段缓存参数
+  templates/parts/head.php    资源版本号/min优先/dns-prefetch/defer/防重提交
+  templates/parts/header.php  head-inner 容器化（布局修复）
+  assets/app.css        head-inner + wrap 1100px
+  .htaccess             静态资源 7 天强缓存
+  install.php           5 个复合索引（平滑升级自动建）
+  cli.php               attachments:gc / asset:minify / db:info 增强
+  file.php              Range 断点续传
+  config.php            cache 驱动配置段（默认 file）
+
+V3.0 / V2.01 / V2.0 / V1.1 / V1.01 / V1.0 文件夹原样保留，随时可回退。
+
+报告完 —— 布局顺眼了，性能底子也打好了，安心去飞 ✈️
