@@ -1,0 +1,104 @@
+/* ============================================================
+   FlyLog V8.5 阅读体验增强样式（独立文件，不进压缩链路，自带 ?v=）
+   覆盖：阅读进度条 / 悬浮TOC滚动高亮 / 图片灯箱 / 移动端抽屉侧栏 /
+        纯文字模式 / 字号调节 / 代码复制按钮 / 平滑主题过渡 / 懒加载淡入
+   ============================================================ */
+
+/* —— 阅读进度条（顶部细线，随滚动增长） —— */
+.fly-progress {
+  position: fixed; left: 0; top: 0; height: 3px; width: 0;
+  background: linear-gradient(90deg, var(--brand), var(--brand-2));
+  z-index: 9998; transition: width .08s linear; pointer-events: none;
+}
+
+/* —— 悬浮目录 TOC（桌面端 sticky 浮于正文右侧，滚动高亮当前章节） —— */
+.toc { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin: 0 0 20px; }
+.toc-title { font-weight: 700; color: var(--text); margin-bottom: 8px; font-size: 15px; }
+.toc ul { list-style: none; margin: 0; padding: 0; }
+.toc li { line-height: 1.9; }
+.toc li.lvl-3 { padding-left: 16px; font-size: 14px; }
+.toc a { color: var(--text-2); font-size: 14px; display: block; border-left: 2px solid transparent; padding-left: 10px; transition: color .2s, border-color .2s; }
+.toc a:hover { color: var(--brand); }
+.toc a.active { color: var(--brand); border-left-color: var(--brand); font-weight: 600; }
+@media (min-width: 1100px) {
+  .post-full .toc { position: sticky; top: 76px; float: right; width: 230px; margin: 6px 0 20px 24px; }
+}
+/* 移动端 TOC 可折叠 */
+@media (max-width: 640px) {
+  .toc { padding: 10px 12px; }
+  .toc ul { max-height: 0; overflow: hidden; transition: max-height .25s ease; }
+  .toc.open ul { max-height: 60vh; overflow: auto; }
+  .toc-title { cursor: pointer; user-select: none; }
+  .toc-title::after { content: " ▾"; float: right; color: var(--text-2); }
+}
+
+/* —— 图片灯箱（点击放大，左右切换，ESC 关闭） —— */
+.fly-lb { position: fixed; inset: 0; background: rgba(0,0,0,.88); z-index: 9999; display: none; align-items: center; justify-content: center; flex-direction: column; }
+.fly-lb.open { display: flex; }
+.fly-lb-img { max-width: 92vw; max-height: 82vh; border-radius: 6px; box-shadow: 0 10px 40px rgba(0,0,0,.5); }
+.fly-lb-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,.15); color: #fff; border: none; font-size: 30px; width: 54px; height: 54px; border-radius: 50%; cursor: pointer; }
+.fly-lb-btn:hover { background: rgba(255,255,255,.3); }
+.fly-lb-prev { left: 18px; } .fly-lb-next { right: 18px; }
+.fly-lb-close { position: absolute; top: 16px; right: 20px; font-size: 30px; color: #fff; background: none; border: none; cursor: pointer; }
+.fly-lb-count { position: absolute; bottom: 18px; color: #fff; font-size: 14px; background: rgba(0,0,0,.4); padding: 4px 12px; border-radius: 20px; }
+
+/* —— 代码块复制按钮 —— */
+.fly-code-wrap { position: relative; margin: 16px 0; }
+.fly-code-wrap pre { margin: 0; }
+.fly-copy-btn { position: absolute; top: 8px; right: 8px; background: var(--surface-2); color: var(--text-2); border: 1px solid var(--border); border-radius: 6px; font-size: 12px; padding: 3px 10px; cursor: pointer; opacity: .85; transition: opacity .2s; }
+.fly-copy-btn:hover { opacity: 1; color: var(--brand); }
+
+/* —— 浮层阅读工具栏（字号 A-/A+ + 纯文字模式 + TOC 展开） —— */
+.fly-read-toolbar { position: fixed; right: 16px; bottom: 70px; z-index: 9990; display: none; flex-direction: column; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px; box-shadow: var(--shadow); }
+.fly-read-toolbar.show { display: flex; }
+.fly-rt-btn { width: 40px; height: 40px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); border-radius: 10px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.fly-rt-btn:hover { color: var(--brand); border-color: var(--brand); }
+.fly-rt-btn.on { background: var(--brand); color: #fff; border-color: var(--brand); }
+
+/* —— 返回顶部 —— */
+.fly-backtop { position: fixed; right: 16px; bottom: 16px; z-index: 9990; width: 44px; height: 44px; border-radius: 50%; background: var(--brand); color: #fff; border: none; font-size: 20px; cursor: pointer; box-shadow: var(--shadow); display: none; align-items: center; justify-content: center; }
+.fly-backtop.show { display: flex; }
+
+/* —— 移动端汉堡按钮 + 抽屉式侧边栏 —— */
+.fly-hamburger { display: none; background: none; border: none; font-size: 22px; color: var(--text); cursor: pointer; margin-left: 10px; }
+@media (max-width: 900px) {
+  .fly-hamburger { display: inline-block; }
+  .layout { display: block; }
+  .main-col { width: 100%; }
+  .side-col, .fly-side-col { position: fixed; top: 0; right: 0; height: 100%; width: 80%; max-width: 320px; background: var(--surface); border-left: 1px solid var(--border); box-shadow: -4px 0 24px rgba(0,0,0,.25); transform: translateX(100%); transition: transform .28s ease; z-index: 9980; padding: 70px 16px 16px; overflow: auto; }
+  body.fly-drawer-open .side-col, body.fly-drawer-open .fly-side-col { transform: translateX(0); }
+  body.fly-drawer-open::after { content: ""; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 9970; }
+}
+
+/* —— 纯文字模式（无障碍：关图关动画） —— */
+html.fly-text-only .post-body img,
+html.fly-text-only .post-body video,
+html.fly-text-only .fly-lb,
+html.fly-text-only iframe { display: none !important; }
+html.fly-text-only * { animation: none !important; transition: none !important; box-shadow: none !important; }
+
+/* —— 平滑主题过渡（切换深/浅时短暂加 .fly-theme-anim） —— */
+html.fly-theme-anim, html.fly-theme-anim body, html.fly-theme-anim .post-full,
+html.fly-theme-anim .site-head, html.fly-theme-anim .side-col, html.fly-theme-anim a,
+html.fly-theme-anim .fly-read-toolbar, html.fly-theme-anim .toc {
+  transition: background-color .3s ease, color .3s ease, border-color .3s ease !important;
+}
+
+/* —— 字号调节：作用于正文 —— */
+.post-body { font-size: var(--fly-fs, 16px); }
+
+/* —— 图片懒加载淡入 —— */
+.post-body img { opacity: 1; transition: opacity .4s ease; }
+.post-body img.fly-lazy { opacity: 0; }
+.post-body img.fly-lazy.loaded { opacity: 1; }
+
+/* —— 外链跳转提示弹窗 —— */
+.fly-leave-modal { position: fixed; inset: 0; z-index: 9997; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.45); }
+.fly-leave-modal.open { display: flex; }
+.fly-leave-box { background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 14px; padding: 22px; max-width: 360px; text-align: center; box-shadow: var(--shadow); }
+.fly-leave-box p { margin: 0 0 16px; line-height: 1.6; word-break: break-all; }
+.fly-leave-box a { color: var(--brand); }
+.fly-leave-ops { display: flex; gap: 10px; justify-content: center; }
+.fly-leave-ops button { border: none; border-radius: 8px; padding: 8px 18px; cursor: pointer; font-size: 14px; }
+.fly-leave-go { background: var(--brand); color: #fff; }
+.fly-leave-cancel { background: var(--surface-2); color: var(--text); border: 1px solid var(--border) !important; }

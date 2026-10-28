@@ -1,0 +1,5 @@
+config.php
+datadir/
+logsdir/
+downloads/
+*.log
